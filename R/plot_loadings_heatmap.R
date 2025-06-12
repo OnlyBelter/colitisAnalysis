@@ -21,6 +21,7 @@
 #'   filtered to only include Tissues that are present in this specified
 #'   Treatment group. For example, setting this to "DSS" will only show tissues
 #'   that were part of the DSS experiment. Defaults to NULL (shows all tissues).
+#' @param k The number of topics.
 #'
 #' @return A `ggplot` object.
 #'
@@ -31,10 +32,7 @@
 #' @importFrom ggplot2 ggplot aes geom_col facet_grid theme_minimal theme element_text unit element_blank element_rect labs scale_fill_manual
 #' @importFrom rlang .data
 #' @export
-plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_treatment = NULL) {
-
-  # Get k from the fit object
-  k <- fit_object$k
+plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_treatment = NULL, k = NULL) {
 
   # --- 1. Define Color Palette ---
   if (is.null(color_palette)) {

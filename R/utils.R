@@ -14,6 +14,7 @@ DISTINGUISHABLE_COLORS_30 <- c(
 #' @param n The number of colors to select.
 #' @param color_palette The palette to choose from.
 #' @return A character vector of 'n' hex color codes.
+#' @export
 select_n_ordered_colors <- function(n, color_palette = DISTINGUISHABLE_COLORS_30) {
   total_colors <- length(color_palette)
   if (!is.numeric(n) || n < 1 || n > total_colors) {

@@ -7,7 +7,8 @@
 plot_loadings_heatmap(
   fit_object,
   color_palette = NULL,
-  filter_by_treatment = NULL
+  filter_by_treatment = NULL,
+  k = NULL
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ is used.}
 filtered to only include Tissues that are present in this specified
 Treatment group. For example, setting this to "DSS" will only show tissues
 that were part of the DSS experiment. Defaults to NULL (shows all tissues).}
+
+\item{k}{The number of topics.}
 }
 \value{
 A \code{ggplot} object.
