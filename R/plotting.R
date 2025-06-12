@@ -40,7 +40,11 @@ create_sorted_structure_plot <- function(fit, samples_metadata, grouping_cols, c
     order_by_vec[samples_in_group] <- -L_subset[, which.max(mean_props)]
   }
 
-  p <- fastTopics::structure_plot(fit, colors = select_n_ordered_colors(k), grouping = grouping_values, order_by = order_by_vec, gap = 2) +
+  p <- fastTopics::structure_plot(fit,
+                                  colors = select_n_ordered_colors(k),
+                                  topics = 1:k,
+                                  grouping = grouping_values,
+                                  order_by = order_by_vec, gap = 2) +
     ggplot2::labs(x = paste(colitis_model_name, "- k =", k, "- Sorted Structure Plot"))
 
   return(p)
