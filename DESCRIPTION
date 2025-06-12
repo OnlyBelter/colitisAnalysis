@@ -28,3 +28,5 @@ Imports:
 Suggests: 
     knitr,
     rmarkdown
+URL: https://github.com/OnlyBelter/colitisAnalysis
+BugReports: https://github.com/OnlyBelter/colitisAnalysis/issues
