@@ -1,0 +1,30 @@
+Package: colitisAnalysis
+Title: A Workflow for Topic Model Analysis of Colitis RNA-Seq Data
+Version: 0.1.2
+Authors@R: c(
+    person(given = "Xin", 
+           family = "Xiong", 
+           email = "21482918@life.hkbu.edu.hk", 
+           role = c("aut", "cre")),
+    person(given = "Maggie", 
+           family = "Clevenger", 
+           email = "clevenger1@uchicago.edu", 
+           role = "aut")
+    )
+Description: Provides a streamlined workflow for analyzing colitis-related gene expression data using topic models. Includes functions for merging datasets, fitting models with fastTopics, generating sorted structure plots, and performing differential expression analysis.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    fastTopics,
+    ggplot2,
+    utils,
+    dplyr,
+    tidyr,
+    magrittr,
+    forcats,
+    rlang
+Suggests: 
+    knitr,
+    rmarkdown
