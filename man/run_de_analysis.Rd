@@ -4,7 +4,15 @@
 \alias{run_de_analysis}
 \title{Run DE Analysis and Extract Top Genes}
 \usage{
-run_de_analysis(fit, counts_matrix, k, de_dir, model_prefix)
+run_de_analysis(
+  fit,
+  counts_matrix,
+  k,
+  de_dir,
+  model_prefix,
+  de_num_cores = 5,
+  num_top_genes = 10
+)
 }
 \arguments{
 \item{fit}{The \code{fastTopics} fit object.}
@@ -16,6 +24,10 @@ run_de_analysis(fit, counts_matrix, k, de_dir, model_prefix)
 \item{de_dir}{Directory to save/load DE results.}
 
 \item{model_prefix}{Prefix for the DE result filename.}
+
+\item{de_num_cores}{The number of cores (\code{nc} parameter) to use for the DE analysis. Defaults to 5.}
+
+\item{num_top_genes}{The number (\code{n}) of top genes to extract for each topic. Defaults to 10.}
 }
 \value{
 A data frame of top differentially expressed genes across all topics.
