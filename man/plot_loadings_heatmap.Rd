@@ -6,33 +6,44 @@
 \usage{
 plot_loadings_heatmap(
   fit_object,
+  treatment_levels = NULL,
+  tissue_levels = NULL,
   color_palette = NULL,
-  filter_by_treatment = NULL,
-  k = NULL
+  save_to_file = NULL,
+  fig_width = 16,
+  fig_height = 9
 )
 }
 \arguments{
-\item{fit_object}{A \code{fastTopics} fit object. The number of topics 'k' is
-inferred from this object.}
+\item{fit_object}{A \code{fastTopics} fit object.}
+
+\item{treatment_levels}{A character vector specifying which "Treatments" to
+include in the plot and in what order they should appear as columns. If NULL,
+all treatments are included in alphabetical order.}
+
+\item{tissue_levels}{A character vector specifying which "Tissues" to include
+in the plot and in what order they should appear as rows. If NULL, all
+tissues are included in alphabetical order.}
 
 \item{color_palette}{An optional named vector of colors. The names should
 correspond to the topics (e.g., "k1", "k2"). If NULL, a default palette
 is used.}
 
-\item{filter_by_treatment}{A character string. If not NULL, the plot will be
-filtered to only include Tissues that are present in this specified
-Treatment group. For example, setting this to "DSS" will only show tissues
-that were part of the DSS experiment. Defaults to NULL (shows all tissues).}
+\item{save_to_file}{An optional character string specifying the full path to
+save the plot file (e.g., "output/plot.png"). If NULL (the default), the
+ggplot object is returned instead of being saved.}
 
-\item{k}{The number of topics.}
+\item{fig_width}{The width of the saved plot in inches. Defaults to 16.}
+
+\item{fig_height}{The height of the saved plot in inches. Defaults to 9.}
 }
 \value{
-A \code{ggplot} object.
+If \code{save_to_file} is NULL, returns a \code{ggplot} object. If a path is provided,
+the function saves the plot and invisibly returns the file path.
 }
 \description{
 This function takes a fastTopics fit object and creates a complex, faceted plot
-showing the topic proportions (loadings) for each sample. It includes extensive
-data wrangling to structure the plot by sample metadata.
+showing the topic proportions (loadings) for each sample.
 }
 \details{
 The function assumes that the sample names (i.e., \code{rownames(fit$L)}) follow a

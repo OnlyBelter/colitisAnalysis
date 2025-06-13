@@ -4,37 +4,50 @@
 #'
 #' @description
 #' This function takes a fastTopics fit object and creates a complex, faceted plot
-#' showing the topic proportions (loadings) for each sample. It includes extensive
-#' data wrangling to structure the plot by sample metadata.
+#' showing the topic proportions (loadings) for each sample.
 #'
 #' @details
 #' The function assumes that the sample names (i.e., `rownames(fit$L)`) follow a
 #' specific format: `"Tissue_Day_Mouse_Treatment"`, for example, `"BM_d04_1_DSS"`.
 #' It uses this structure to facet the plot.
 #'
-#' @param fit_object A `fastTopics` fit object. The number of topics 'k' is
-#'   inferred from this object.
+#' @param fit_object A `fastTopics` fit object.
+#' @param treatment_levels A character vector specifying which "Treatments" to
+#'   include in the plot and in what order they should appear as columns. If NULL,
+#'   all treatments are included in alphabetical order.
+#' @param tissue_levels A character vector specifying which "Tissues" to include
+#'   in the plot and in what order they should appear as rows. If NULL, all
+#'   tissues are included in alphabetical order.
 #' @param color_palette An optional named vector of colors. The names should
 #'   correspond to the topics (e.g., "k1", "k2"). If NULL, a default palette
 #'   is used.
-#' @param filter_by_treatment A character string. If not NULL, the plot will be
-#'   filtered to only include Tissues that are present in this specified
-#'   Treatment group. For example, setting this to "DSS" will only show tissues
-#'   that were part of the DSS experiment. Defaults to NULL (shows all tissues).
-#' @param k The number of topics.
+#' @param save_to_file An optional character string specifying the full path to
+#'   save the plot file (e.g., "output/plot.png"). If NULL (the default), the
+#'   ggplot object is returned instead of being saved.
+#' @param fig_width The width of the saved plot in inches. Defaults to 16.
+#' @param fig_height The height of the saved plot in inches. Defaults to 9.
 #'
-#' @return A `ggplot` object.
+#' @return If `save_to_file` is NULL, returns a `ggplot` object. If a path is provided,
+#'   the function saves the plot and invisibly returns the file path.
 #'
 #' @importFrom magrittr `%>%` set_names
-#' @importFrom dplyr as_tibble mutate group_by ungroup arrange filter pull dense_rank
+#' @importFrom dplyr as_tibble mutate group_by ungroup arrange desc
 #' @importFrom tidyr pivot_longer separate
 #' @importFrom forcats fct_reorder
-#' @importFrom ggplot2 ggplot aes geom_col facet_grid theme_minimal theme element_text unit element_blank element_rect labs scale_fill_manual
+#' @importFrom ggplot2 ggplot aes geom_col facet_grid theme_minimal theme element_text unit element_blank element_rect labs scale_fill_manual guides guide_legend ggsave
 #' @importFrom rlang .data
 #' @export
-plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_treatment = NULL, k = NULL) {
+plot_loadings_heatmap <- function(fit_object,
+                                  treatment_levels = NULL,
+                                  tissue_levels = NULL,
+                                  color_palette = NULL,
+                                  save_to_file = NULL,
+                                  fig_width = 16,
+                                  fig_height = 9) {
 
-  # --- 1. Define Color Palette ---
+  # --- 1. Get k and Define Color Palette ---
+  k <- ncol(fit_object$L)
+
   if (is.null(color_palette)) {
     message(paste("Color palette not provided. Using default palette for k =", k))
     coloring <- select_n_ordered_colors(k) %>%
@@ -43,9 +56,7 @@ plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_tr
     coloring <- color_palette
   }
 
-  # --- 2. Data Wrangling ---
-  # This section transforms the topic loadings matrix into a long-format
-  # data frame suitable for ggplot.
+  # --- 2. Data Wrangling (Corrected Logic) ---
   df <- dplyr::as_tibble(fit_object$L, rownames = "Sample") %>%
     tidyr::pivot_longer(
       cols = -.data$Sample,
@@ -53,18 +64,11 @@ plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_tr
       values_to = "Loading"
     ) %>%
     tidyr::separate(.data$Sample, into = c("Tissue", "Day", "Mouse", "Treatment"), sep = "_", remove = FALSE) %>%
+    # **CHANGE**: Create a stable factor for K. This helps the legend.
     dplyr::mutate(
-      Tissue = factor(.data$Tissue, levels = sort(unique(.data$Tissue))),
-      Day = factor(.data$Day, levels = sort(unique(.data$Day))),
-      Mouse = factor(.data$Mouse, levels = sort(unique(.data$Mouse))),
-      Treatment = factor(.data$Treatment, levels = c(
-        "AbxTreated", "DSS", "Citro", "CDifficile"
-      )),
+      K = factor(.data$K, levels = paste0("k", 1:k)),
       Time_numerical = as.numeric(sub("^d", "", .data$Day))
     ) %>%
-    dplyr::group_by(.data$Sample) %>%
-    dplyr::mutate(K = forcats::fct_reorder(.data$K, .data$Loading, .desc = TRUE)) %>%
-    dplyr::ungroup() %>%
     dplyr::group_by(.data$Treatment) %>%
     dplyr::arrange(.data$Time_numerical) %>%
     dplyr::mutate(dense_time = dplyr::dense_rank(.data$Time_numerical)) %>%
@@ -78,17 +82,30 @@ plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_tr
     dplyr::arrange(.data$Time_numerical, .data$dense_time) %>%
     dplyr::mutate(Time = factor(.data$Time, levels = sort(unique(.data$Time))))
 
-  # --- 3. Optional Filtering ---
+  # --- 3. Filter data and set factor levels based on user input ---
   df_to_plot <- df
-  if (!is.null(filter_by_treatment)) {
-    message(paste("Filtering plot to only include tissues present in the '", filter_by_treatment, "' treatment group."))
-    tissues_to_keep <- df %>%
-      dplyr::filter(.data$Treatment == filter_by_treatment) %>%
-      dplyr::pull(.data$Tissue) %>%
-      unique()
 
-    df_to_plot <- df %>% dplyr::filter(.data$Tissue %in% tissues_to_keep)
+  if (!is.null(treatment_levels)) {
+    df_to_plot <- df_to_plot %>% dplyr::filter(.data$Treatment %in% treatment_levels)
+    df_to_plot$Treatment <- factor(df_to_plot$Treatment, levels = treatment_levels)
+  } else {
+    df_to_plot$Treatment <- factor(df_to_plot$Treatment)
   }
+
+  if (!is.null(tissue_levels)) {
+    df_to_plot <- df_to_plot %>% dplyr::filter(.data$Tissue %in% tissue_levels)
+    df_to_plot$Tissue <- factor(df_to_plot$Tissue, levels = tissue_levels)
+  } else {
+    df_to_plot$Tissue <- factor(df_to_plot$Tissue)
+  }
+
+  # **CHANGE**: To control stacking order (largest bar at the bottom),
+  # we arrange the data frame itself before plotting.
+  df_to_plot <- df_to_plot %>%
+    dplyr::group_by(.data$Sample) %>%
+    dplyr::arrange(dplyr::desc(.data$Loading), .by_group = TRUE) %>%
+    dplyr::ungroup()
+
 
   # --- 4. Create the Plot ---
   p <- ggplot2::ggplot(df_to_plot, ggplot2::aes(x = .data$Time, y = .data$Loading, fill = .data$K)) +
@@ -107,8 +124,26 @@ plot_loadings_heatmap <- function(fit_object, color_palette = NULL, filter_by_tr
       x = "Timepoint and Replicate",
       y = "Topic Proportion"
     ) +
-    ggplot2::scale_fill_manual(values = coloring,
-                               breaks = names(coloring))
+    ggplot2::scale_fill_manual(
+      name = "Topic",
+      values = coloring,
+      breaks = names(coloring)
+    ) +
+    ggplot2::guides(fill = ggplot2::guide_legend(ncol = 1, title.position = "top"))
 
-  return(p)
+  # --- 5. Save or Return the Plot ---
+  if (!is.null(save_to_file)) {
+    message(paste("Saving plot to:", save_to_file))
+    ggplot2::ggsave(
+      filename = save_to_file,
+      plot = p,
+      width = fig_width,
+      height = fig_height,
+      dpi = 300,
+      limitsize = FALSE
+    )
+    return(invisible(save_to_file))
+  } else {
+    return(p)
+  }
 }
